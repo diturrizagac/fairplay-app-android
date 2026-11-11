@@ -40,6 +40,6 @@ fun <AppState, LocalState, LocalAction, AppAction> scopedEffect(
     actionEmbedder: (LocalAction) -> AppAction,
     effect: Effect<LocalState, LocalAction>
 ): Effect<AppState, AppAction> = { state, action ->
-    val localAction = actionExtractor(action) ?: return@scopedEffect emptyList()
-    effect(stateSelector(state), localAction).map(actionEmbedder)
+    val localAction = actionExtractor(action)
+    if (localAction == null) emptyList() else effect(stateSelector(state), localAction).map(actionEmbedder)
 }

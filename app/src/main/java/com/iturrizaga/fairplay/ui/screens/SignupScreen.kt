@@ -44,7 +44,7 @@ fun SignupScreen(
     ) {
         // Header
         Icon(
-            imageVector = Icons.Filled.SportsMartial,
+            imageVector = Icons.Filled.SportsSoccer,
             contentDescription = null,
             modifier = Modifier.size(48.dp),
             tint = MaterialTheme.colorScheme.primary

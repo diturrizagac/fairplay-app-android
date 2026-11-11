@@ -46,7 +46,7 @@ fun AuthScreen(
     ) {
         // Header
         Icon(
-            imageVector = Icons.Filled.SportsMartial,
+            imageVector = Icons.Filled.SportsSoccer,
             contentDescription = null,
             modifier = Modifier.size(64.dp),
             tint = MaterialTheme.colorScheme.primary

@@ -10,7 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cake
-import androidx.compose.material.icons.filled.SportsMartial
+import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -103,7 +103,7 @@ private fun PositionPage(
         Spacer(modifier = Modifier.height(56.dp))
 
         Icon(
-            imageVector = Icons.Filled.SportsMartial,
+            imageVector = Icons.Filled.SportsSoccer,
             contentDescription = null,
             modifier = Modifier.size(52.dp),
             tint = MaterialTheme.colorScheme.primary
