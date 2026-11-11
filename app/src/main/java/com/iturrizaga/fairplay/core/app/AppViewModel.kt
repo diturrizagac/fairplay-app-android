@@ -2,12 +2,18 @@ package com.iturrizaga.fairplay.core.app
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import com.iturrizaga.fairplay.core.localization.Language
 import com.iturrizaga.fairplay.core.network.APIClient
 import com.iturrizaga.fairplay.core.network.AppEnvironment
 import com.iturrizaga.fairplay.core.network.HttpAPIClient
+import com.iturrizaga.fairplay.core.session.KeystoreSessionStore
+import com.iturrizaga.fairplay.core.session.SessionStore
 import com.iturrizaga.fairplay.core.store.Store
 import com.iturrizaga.fairplay.core.store.scopedEffect
+import com.iturrizaga.fairplay.features.auth.AppSession
+import com.iturrizaga.fairplay.features.auth.AuthAction
+import com.iturrizaga.fairplay.features.auth.AuthState
 import com.iturrizaga.fairplay.features.auth.authEffect
 import com.iturrizaga.fairplay.features.matchcreation.matchCreationEffect
 import com.iturrizaga.fairplay.features.matchregistration.matchRegistrationEffect
@@ -15,6 +21,7 @@ import com.iturrizaga.fairplay.features.matches.matchListEffect
 import com.iturrizaga.fairplay.features.onboarding.onboardingEffect
 import com.iturrizaga.fairplay.features.players.playerListEffect
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 private const val PREF_LANGUAGE = "app_language"
 
@@ -31,15 +38,20 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         HttpAPIClient(AppEnvironment.current) { store.state.value.language }
     }
 
+    private val sessionStore: SessionStore = KeystoreSessionStore(application)
+
     private val store = Store(
-        initialState = AppState(language = savedLanguage()),
+        initialState = AppState(
+            auth = AuthState(session = AppSession.RESTORING),
+            language = savedLanguage()
+        ),
         reducer = ::appReducer,
         effects = listOf(
             scopedEffect(
                 stateSelector  = { it.auth },
                 actionExtractor = { (it as? AppAction.Auth)?.action },
                 actionEmbedder  = { AppAction.Auth(it) },
-                effect          = { state, action -> authEffect(state, action, client) }
+                effect          = { state, action -> authEffect(state, action, client, sessionStore) }
             ),
             scopedEffect(
                 stateSelector  = { it.onboarding },
@@ -76,6 +88,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     )
 
     val state: StateFlow<AppState> = store.state
+
+    init {
+        viewModelScope.launch {
+            client.unauthorizedEvents.collect { send(AppAction.Auth(AuthAction.SessionExpired)) }
+        }
+    }
 
     fun send(action: AppAction) {
         if (action is AppAction.SetLanguage) {

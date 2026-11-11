@@ -3,6 +3,7 @@ package com.iturrizaga.fairplay.features.matchcreation
 import com.iturrizaga.fairplay.core.models.Match
 
 sealed class MatchCreationAction {
+    data object Reset : MatchCreationAction()
     data class SetName(val name: String) : MatchCreationAction()
     data class SetDate(val date: Long) : MatchCreationAction()
     data class SetLocation(val location: String) : MatchCreationAction()

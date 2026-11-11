@@ -97,9 +97,10 @@ fun AuthScreen(
         )
 
         // Error message
-        if (state.error != null) {
+        val message = state.error ?: if (state.isSessionExpired) stringResource(R.string.error_unauthorized) else null
+        if (message != null) {
             Text(
-                text = state.error,
+                text = message,
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.labelSmall
             )

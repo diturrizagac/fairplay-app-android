@@ -1,6 +1,7 @@
 package com.iturrizaga.fairplay.features.onboarding
 
 fun onboardingReducer(state: OnboardingState, action: OnboardingAction): OnboardingState = when (action) {
+    is OnboardingAction.Reset -> OnboardingState()
     is OnboardingAction.Setup -> state.copy(
         pendingUser = action.user,
         pendingToken = action.token,

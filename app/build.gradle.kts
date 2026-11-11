@@ -16,10 +16,15 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Debug builds hit the local API unless overridden with -Pfairplay.env=dev|prod.
+        val env = (project.findProperty("fairplay.env") as String?) ?: "local"
+        buildConfigField("String", "FAIRPLAY_ENV", "\"$env\"")
     }
 
     buildTypes {
         release {
+            buildConfigField("String", "FAIRPLAY_ENV", "\"prod\"")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -36,6 +41,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

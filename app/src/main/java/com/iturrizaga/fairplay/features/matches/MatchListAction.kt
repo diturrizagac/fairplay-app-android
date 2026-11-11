@@ -3,6 +3,7 @@ package com.iturrizaga.fairplay.features.matches
 import com.iturrizaga.fairplay.core.models.Match
 
 sealed class MatchListAction {
+    data object Reset : MatchListAction()
     data object OnTask : MatchListAction()
     data class FetchSuccess(val matches: List<Match>) : MatchListAction()
     data class FetchFailure(val error: String) : MatchListAction()

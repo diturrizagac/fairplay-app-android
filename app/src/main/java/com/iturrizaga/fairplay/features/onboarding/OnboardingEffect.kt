@@ -4,7 +4,7 @@ import com.iturrizaga.fairplay.core.network.APIClient
 
 suspend fun onboardingEffect(state: OnboardingState, action: OnboardingAction, client: APIClient): List<OnboardingAction> {
     if (action !is OnboardingAction.Submit) return emptyList()
-    val position = state.position ?: return listOf(OnboardingAction.SubmitSuccess)
+    val position = state.position ?: return listOf(OnboardingAction.SubmitFailure("Selecciona tu posición."))
     return try {
         client.createPlayerProfile(position, state.secondaryPosition, state.birthDate)
         listOf(OnboardingAction.SubmitSuccess)

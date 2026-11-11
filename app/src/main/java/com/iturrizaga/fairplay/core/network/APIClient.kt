@@ -6,6 +6,9 @@ import com.iturrizaga.fairplay.core.models.Player
 import com.iturrizaga.fairplay.core.models.PlayerPosition
 import com.iturrizaga.fairplay.features.auth.AuthUser
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -18,6 +21,9 @@ import java.util.TimeZone
 
 interface APIClient {
     var token: String?
+    /** Emits whenever a request sent with a token is rejected with 401. */
+    val unauthorizedEvents: Flow<Unit>
+    suspend fun fetchCurrentUser(): AuthUser
     suspend fun signup(email: String, password: String, name: String): Pair<AuthUser, String>
     suspend fun login(email: String, password: String): Pair<AuthUser, String>
     suspend fun logout()
@@ -32,6 +38,9 @@ interface APIClient {
 class HttpAPIClient(environment: AppEnvironment, private val languageProvider: () -> Language = { Language.ENGLISH }) : APIClient {
     override var token: String? = null
 
+    private val _unauthorizedEvents = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    override val unauthorizedEvents: Flow<Unit> = _unauthorizedEvents.asSharedFlow()
+
     private val baseUrl = environment.baseUrl
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
@@ -45,10 +54,7 @@ class HttpAPIClient(environment: AppEnvironment, private val languageProvider: (
             put("name", name)
         }
         val json = postObject("/auth/signup", body, authorized = false)
-        val userJson = json.getJSONObject("user")
-        val playerId = if (userJson.isNull("player_id")) null else userJson.getString("player_id")
-        val user = AuthUser(id = userJson.getString("id"), email = userJson.getString("email"), playerId = playerId)
-        Pair(user, json.getString("access_token"))
+        Pair(json.getJSONObject("user").toAuthUser(), json.getString("access_token"))
     }
 
     override suspend fun login(email: String, password: String): Pair<AuthUser, String> = withContext(Dispatchers.IO) {
@@ -57,10 +63,11 @@ class HttpAPIClient(environment: AppEnvironment, private val languageProvider: (
             put("password", password)
         }
         val json = postObject("/auth/login", body, authorized = false)
-        val userJson = json.getJSONObject("user")
-        val playerId = if (userJson.isNull("player_id")) null else userJson.getString("player_id")
-        val user = AuthUser(id = userJson.getString("id"), email = userJson.getString("email"), playerId = playerId)
-        Pair(user, json.getString("access_token"))
+        Pair(json.getJSONObject("user").toAuthUser(), json.getString("access_token"))
+    }
+
+    override suspend fun fetchCurrentUser(): AuthUser = withContext(Dispatchers.IO) {
+        getObject("/auth/me").toAuthUser()
     }
 
     override suspend fun createPlayerProfile(position: PlayerPosition, secondaryPosition: PlayerPosition?, birthDate: Long): Unit = withContext(Dispatchers.IO) {
@@ -71,7 +78,7 @@ class HttpAPIClient(environment: AppEnvironment, private val languageProvider: (
                 timeZone = TimeZone.getTimeZone("UTC")
             }.format(Date(birthDate)))
         }
-        postVoid("/api/v1/players/me", body)
+        postVoid("/players/me", body)
     }
 
     override suspend fun logout(): Unit = withContext(Dispatchers.IO) {
@@ -124,6 +131,14 @@ class HttpAPIClient(environment: AppEnvironment, private val languageProvider: (
 
     // MARK: - Helpers
 
+    private fun JSONObject.toAuthUser() = AuthUser(
+        id       = getString("id"),
+        email    = getString("email"),
+        name     = optString("name", ""),
+        isAdmin  = optBoolean("is_admin", false),
+        playerId = if (isNull("player_id")) null else getString("player_id")
+    )
+
     private fun JSONObject.toMatch() = Match(
         id              = getString("id"),
         name            = getString("name"),
@@ -132,6 +147,14 @@ class HttpAPIClient(environment: AppEnvironment, private val languageProvider: (
         maxPlayers      = getInt("max_players"),
         registeredCount = getInt("registered_count")
     )
+
+    private fun getObject(path: String): JSONObject {
+        val conn = openConnection("GET", path)
+        NetworkLogger.logRequest(conn.requestMethod, conn.url.toString(), conn.requestProperties.mapValues { it.value.joinToString() }, null)
+        val body = readBody(conn)
+        conn.disconnect()
+        return JSONObject(body)
+    }
 
     private fun getArray(path: String): JSONArray {
         val conn = openConnection("GET", path)
@@ -215,7 +238,10 @@ class HttpAPIClient(environment: AppEnvironment, private val languageProvider: (
         if (code in 200..299) return
         val errorDesc = parseErrorDescription(body)
         when (code) {
-            401 -> throw APIError.Unauthorized()
+            401 -> {
+                if (token != null) _unauthorizedEvents.tryEmit(Unit)
+                throw APIError.Unauthorized()
+            }
             else -> {
                 if (errorDesc != null) throw APIError.Conflict(errorDesc)
                 throw APIError.ServerError(code)

@@ -31,6 +31,20 @@ fun makeMediator(): Effect<AppState, AppAction> = { _, action ->
             listOf(AppAction.Navigation(NavigationAction.ClearStack))
         }
 
+        // Logout / expired session — back to initial state so the next account
+        // never sees this one's data.
+        action is AppAction.Auth && (action.action is AuthAction.Logout || action.action is AuthAction.SessionExpired) -> {
+            listOf(
+                AppAction.Navigation(NavigationAction.ClearStack),
+                AppAction.Onboarding(OnboardingAction.Reset),
+                AppAction.PlayerList(PlayerListAction.Reset),
+                AppAction.PlayerDetail(PlayerDetailAction.Reset),
+                AppAction.MatchList(MatchListAction.Reset),
+                AppAction.MatchRegistration(MatchRegistrationAction.Reset),
+                AppAction.MatchCreation(MatchCreationAction.Reset)
+            )
+        }
+
 
         // Player detail
         action is AppAction.PlayerList && action.action is PlayerListAction.ShowDetail -> {
