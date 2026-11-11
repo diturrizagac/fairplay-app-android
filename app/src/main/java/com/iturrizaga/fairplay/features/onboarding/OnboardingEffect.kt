@@ -6,8 +6,8 @@ suspend fun onboardingEffect(state: OnboardingState, action: OnboardingAction, c
     if (action !is OnboardingAction.Submit) return emptyList()
     val position = state.position ?: return listOf(OnboardingAction.SubmitFailure("Selecciona tu posición."))
     return try {
-        client.createPlayerProfile(position, state.secondaryPosition, state.birthDate)
-        listOf(OnboardingAction.SubmitSuccess)
+        val playerId = client.createPlayerProfile(position, state.secondaryPosition, state.birthDate)
+        listOf(OnboardingAction.SubmitSuccess(playerId))
     } catch (e: Exception) {
         listOf(OnboardingAction.SubmitFailure(e.message ?: "Error al crear el perfil."))
     }

@@ -6,6 +6,8 @@ sealed class AppRoute {
     data object PlayerDetail : AppRoute()
     data object MatchRegistration : AppRoute()
     data object MatchCreation : AppRoute()
+    data object TeamArrangement : AppRoute()
+    data object MatchFinish : AppRoute()
 }
 
 data class NavigationState(

@@ -5,6 +5,7 @@ import com.iturrizaga.fairplay.core.models.Player
 sealed class PlayerListAction {
     data object Reset : PlayerListAction()
     data object OnTask : PlayerListAction()
+    data object Refresh : PlayerListAction()
     data class FetchSuccess(val players: List<Player>) : PlayerListAction()
     data class FetchFailure(val error: String) : PlayerListAction()
     data class ShowDetail(val player: Player) : PlayerListAction()

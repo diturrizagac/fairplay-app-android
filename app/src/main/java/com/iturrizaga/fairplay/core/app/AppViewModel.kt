@@ -16,10 +16,12 @@ import com.iturrizaga.fairplay.features.auth.AuthAction
 import com.iturrizaga.fairplay.features.auth.AuthState
 import com.iturrizaga.fairplay.features.auth.authEffect
 import com.iturrizaga.fairplay.features.matchcreation.matchCreationEffect
+import com.iturrizaga.fairplay.features.matchfinish.matchFinishEffect
 import com.iturrizaga.fairplay.features.matchregistration.matchRegistrationEffect
 import com.iturrizaga.fairplay.features.matches.matchListEffect
 import com.iturrizaga.fairplay.features.onboarding.onboardingEffect
 import com.iturrizaga.fairplay.features.players.playerListEffect
+import com.iturrizaga.fairplay.features.teamarrangement.teamArrangementEffect
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
@@ -82,6 +84,18 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 actionExtractor = { (it as? AppAction.MatchCreation)?.action },
                 actionEmbedder  = { AppAction.MatchCreation(it) },
                 effect          = { state, action -> matchCreationEffect(state, action, client) }
+            ),
+            scopedEffect(
+                stateSelector  = { it.teamArrangement },
+                actionExtractor = { (it as? AppAction.TeamArrangement)?.action },
+                actionEmbedder  = { AppAction.TeamArrangement(it) },
+                effect          = { state, action -> teamArrangementEffect(state, action, client) }
+            ),
+            scopedEffect(
+                stateSelector  = { it.matchFinish },
+                actionExtractor = { (it as? AppAction.MatchFinish)?.action },
+                actionEmbedder  = { AppAction.MatchFinish(it) },
+                effect          = { state, action -> matchFinishEffect(state, action, client) }
             ),
             makeMediator()
         )
