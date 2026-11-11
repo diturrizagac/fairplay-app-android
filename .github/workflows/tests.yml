@@ -14,7 +14,11 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
-      - name: Unit tests
-        run: ./gradlew testDebugUnitTest --stacktrace
-      - name: Build release
-        run: ./gradlew assembleRelease --stacktrace
+      - name: Unit tests and release build
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew testDebugUnitTest assembleRelease --console=plain 2>&1 | tee build.log
+      - name: Show build errors
+        if: failure()
+        run: grep -E "^e: |^w: .*(error)|error:|FAILED|What went wrong" -A3 build.log | head -150
