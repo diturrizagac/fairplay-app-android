@@ -21,4 +21,5 @@ jobs:
           ./gradlew testDebugUnitTest assembleRelease --console=plain 2>&1 | tee build.log
       - name: Show build errors
         if: failure()
-        run: grep -E "^e: |^w: .*(error)|error:|FAILED|What went wrong" -A3 build.log | head -150
+        run: |
+          grep -E "^e: |error:|FAILED|What went wrong" -A3 build.log | head -150
